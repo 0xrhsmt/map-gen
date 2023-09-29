@@ -5,16 +5,29 @@ import "./App.css";
 import { useSecretjs } from "./secretjs/useSecretjs";
 
 function App() {
-  const { connectWallet, queryCount, increment, count } = useSecretjs();
+  const {
+    connectWallet,
+    queryCount,
+    queryMaps,
+    increment,
+    generate,
+    count,
+    maps,
+  } = useSecretjs();
 
   useEffect(() => {
     queryCount();
-  }, [queryCount]);
+    queryMaps();
+  }, [queryCount, queryMaps]);
+
+  console.log(maps);
 
   return (
     <>
       <div>
         <button onClick={connectWallet}>connect</button>
+        <button onClick={generate}>generate</button>
+        {maps}
         <a href="https://vitejs.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
         </a>

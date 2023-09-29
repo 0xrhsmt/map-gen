@@ -33,7 +33,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
-        ExecuteMsg::Genrate {} => try_generate(deps, env),
+        ExecuteMsg::Generate {} => try_generate(deps, env),
         ExecuteMsg::Clear {} => try_clear(deps, env),
     }
 }
@@ -221,7 +221,7 @@ mod tests {
             }],
         );
 
-        let exec_msg = ExecuteMsg::Genrate {};
+        let exec_msg = ExecuteMsg::Generate {};
         execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
 
         let res = query(deps.as_ref(), mock_env(), QueryMsg::GetMaps {}).unwrap();
