@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 async function main() {
+  if (!process.env.MNEMONIC) {
+    throw new Error("No MNEMONIC in .env");
+  }
   const wallet = new Wallet(process.env.MNEMONIC);
   const contract_wasm = fs.readFileSync("../contract.wasm.gz");
 
@@ -14,7 +17,9 @@ async function main() {
     walletAddress: wallet.address,
   });
 
-  let tx = await secretjs.tx.compute.storeCode(
+  console.log("storing code...");
+
+  let storeTx = await secretjs.tx.compute.storeCode(
     {
       sender: wallet.address,
       wasm_byte_code: contract_wasm,
@@ -25,21 +30,24 @@ async function main() {
       gasLimit: 4_000_000,
     }
   );
-  if (tx.arrayLog === undefined) {
+  if (storeTx.arrayLog === undefined) {
     throw new Error("No arrayLog in response");
   }
-
-  const codeId = tx.arrayLog.find(
+  const codeId = storeTx.arrayLog.find(
     (log) => log.type === "message" && log.key === "code_id"
   )!.value;
+
+  console.log("getting code hash...");
 
   const res = await secretjs.query.compute.codeHashByCodeId({
     code_id: codeId,
   });
   const contractCodeHash = res.code_hash;
 
+  console.log("instantiating contract...");
+
   const initMsg = { count: 0 };
-  let tx2 = await secretjs.tx.compute.instantiateContract(
+  let initTx = await secretjs.tx.compute.instantiateContract(
     {
       code_id: codeId,
       sender: wallet.address,
@@ -51,16 +59,21 @@ async function main() {
       gasLimit: 400_000,
     }
   );
-  if (tx2.arrayLog === undefined) {
+  if (initTx.arrayLog === undefined) {
     throw new Error("No arrayLog in response");
   }
-
-  const contractAddress = tx2.arrayLog.find(
+  const contractAddress = initTx.arrayLog.find(
     (log) => log.type === "message" && log.key === "contract_address"
   )!.value;
 
-  console.log("codeId: ", codeId);
-  console.log("contractCodeHash", contractCodeHash);
-  console.log("contractAddress", contractAddress);
+  const deployment = {
+    codeId: codeId,
+    contractCodeHash: contractCodeHash,
+    contractAddress: contractAddress,
+  };
+
+  fs.writeFileSync("../latest-deployment.json", JSON.stringify(deployment));
+  console.log("latest deployment is...\n", deployment);
 }
+
 await main();
