@@ -9,6 +9,10 @@
 
 ## Demo Video
 
+https://map-randomgen.vercel.app/
+
+## Demo Video
+
 ## Flow
 
 <img width="800" alt="screenshot" src="https://github.com/0xrhsmt/map-randomgen/blob/main/docs/assets/flow.png">
