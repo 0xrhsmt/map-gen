@@ -7,15 +7,17 @@
 * Anticipating the development of on-chain games not only in the Ethereum ecosystem but also in the Cosmos ecosystem, I developed this project as a PoC (Proof of Concept).
 * I think randomness is a crucial element in on-chain games, and I hope this project can provide some insights for future games that utilize randomness.
 
-## Demo Video
+## Live Demo
 
 https://map-randomgen.vercel.app/
 
 ## Demo Video
 
+https://youtu.be/6Cd0-b80XHI
+
 ## Flow
 
-<img width="800" alt="screenshot" src="https://github.com/0xrhsmt/map-randomgen/blob/main/docs/assets/flow.png">
+<img width="800" alt="flow" src="https://github.com/0xrhsmt/map-randomgen/blob/main/docs/assets/flow.png">
 
 1. User calls map-randomgen contract.
 2. map-randomgen contract get random number from Secret VRF.
