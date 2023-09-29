@@ -1,9 +1,10 @@
-import React, { createContext, useCallback, useState } from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import { SecretNetworkClient } from "secretjs";
 
 export type SecretjsContextType = {
   secretjs?: SecretNetworkClient | null;
   secretAddress?: string | null;
+  isWalletConnected: boolean;
   connectWallet?: () => void;
   disconnectWallet?: () => void;
 };
@@ -81,9 +82,23 @@ export const SecretjsContextProvider: React.FC<React.PropsWithChildren> = ({
     console.log("Wallet disconnected!");
   }, []);
 
+  useEffect(() => {
+    const autoConnect = localStorage.getItem("keplrAutoConnect");
+
+    if (autoConnect === "true") {
+      connectWallet();
+    }
+  }, [connectWallet]);
+
   return (
     <SecretjsContext.Provider
-      value={{ secretjs, secretAddress, connectWallet, disconnectWallet }}
+      value={{
+        secretjs,
+        secretAddress,
+        connectWallet,
+        disconnectWallet,
+        isWalletConnected: !!secretjs,
+      }}
     >
       {children}
     </SecretjsContext.Provider>

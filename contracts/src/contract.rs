@@ -2,10 +2,12 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
+use crate::bsp::{BSPMap, Point};
 use crate::msg::{
     CountResponse, ExecuteMsg, InstantiateMsg, MapCountResponse, MapResponse, MapsResponse,
     QueryMsg,
 };
+use crate::rand::MersenneTwister;
 use crate::state::{config, config_read, State};
 
 #[entry_point]
@@ -66,19 +68,23 @@ pub fn try_generate(deps: DepsMut, env: Env) -> StdResult<Response> {
     let random_binary = env.block.random.clone();
     let random_bytes = &random_binary.as_ref().unwrap().0;
 
-    let random_number = u64::from_le_bytes([
+    let random_number = u32::from_le_bytes([
         random_bytes[0],
         random_bytes[1],
         random_bytes[2],
         random_bytes[3],
-        random_bytes[4],
-        random_bytes[5],
-        random_bytes[6],
-        random_bytes[7],
     ]);
 
+    let map = BSPMap::new(
+        Point::new(30, 50),
+        MersenneTwister::new(random_number),
+        Point::new(3, 5),
+        Point::new(10, 15),
+    )
+    .unwrap();
+
     config(deps.storage).update(|mut state| -> Result<_, StdError> {
-        state.maps.push(format!("{random_number:b}"));
+        state.maps.push(format!("{map}"));
         Ok(state)
     })?;
 

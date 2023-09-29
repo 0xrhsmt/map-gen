@@ -60,6 +60,7 @@ export async function deploy() {
     }
   );
   if (initTx.arrayLog === undefined) {
+    console.log(initTx);
     throw new Error("No arrayLog in response");
   }
   const contractAddress = initTx.arrayLog.find(

@@ -1,50 +1,68 @@
 import { useEffect } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+
 import { useSecretjs } from "./secretjs/useSecretjs";
+import { Maps } from "./components/Map";
+
+const NavBar: React.FC = () => {
+  return (
+    <div className="navbar bg-base-100">
+      <div className="navbar-start"></div>
+      <div className="navbar-center">
+        <a className="btn btn-ghost normal-case text-xl">map-randomgen</a>
+      </div>
+      <div className="navbar-end"></div>
+    </div>
+  );
+};
 
 function App() {
   const {
-    connectWallet,
-    queryCount,
-    queryMaps,
-    increment,
-    generate,
-    count,
-    maps,
+    wallet: { isConnected, connect: connectWallet },
+    execute: { generate: generateMap },
+    query: { queryMaps },
+    state: { maps },
   } = useSecretjs();
 
   useEffect(() => {
-    queryCount();
     queryMaps();
-  }, [queryCount, queryMaps]);
-
-  console.log(maps);
+  }, [queryMaps]);
 
   return (
     <>
-      <div>
-        <button onClick={connectWallet}>connect</button>
-        <button onClick={generate}>generate</button>
-        {maps}
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="h-screen">
+        <NavBar />
+
+        <div className="px-8 py-1">
+          {maps && maps.length > 0 ? (
+            <Maps maps={maps} />
+          ) : (
+            <div
+              className="flex justify-center items-center w-full"
+              style={{ height: "calc(100vh - 64px)" }}
+            >
+              <div className="text-3xl mb-24">Let's generate our maps</div>
+            </div>
+          )}
+        </div>
+
+        <div className="fixed bottom-8 -translate-x-1/2 left-1/2">
+          {isConnected ? (
+            <button
+              className="btn btn-lg btn-wide btn-primary"
+              onClick={() => generateMap({ withQuery: true })}
+            >
+              GENERATE MAP
+            </button>
+          ) : (
+            <button
+              className="btn btn-lg btn-wide btn-accent"
+              onClick={connectWallet}
+            >
+              CONNECT WALLET
+            </button>
+          )}
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={increment}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   );
 }

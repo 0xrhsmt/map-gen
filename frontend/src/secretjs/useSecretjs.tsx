@@ -7,66 +7,14 @@ const contractCodeHash = deployment.contractCodeHash;
 const contractAddress = deployment.contractAddress;
 
 export const useSecretjs = () => {
-  const { secretjs, secretAddress, connectWallet, disconnectWallet } =
-    useContext(SecretjsContext);
-  const [count, setCount] = useState<number | null>(null);
+  const {
+    secretjs,
+    secretAddress,
+    connectWallet,
+    disconnectWallet,
+    isWalletConnected,
+  } = useContext(SecretjsContext);
   const [maps, setMaps] = useState<string[]>([]);
-
-  const increment = useCallback(async () => {
-    if (!secretjs || !secretAddress) {
-      return;
-    }
-
-    const tx = await secretjs.tx.compute.executeContract(
-      {
-        sender: secretAddress,
-        contract_address: contractAddress,
-        msg: {
-          increment: {},
-        },
-        code_hash: contractCodeHash,
-      },
-      { gasLimit: 100_000 }
-    );
-    console.debug(tx);
-  }, [secretAddress, secretjs]);
-
-  const generate = useCallback(async () => {
-    if (!secretjs || !secretAddress) {
-      return;
-    }
-
-    const tx = await secretjs.tx.compute.executeContract(
-      {
-        sender: secretAddress,
-        contract_address: contractAddress,
-        msg: {
-          generate: {},
-        },
-        code_hash: contractCodeHash,
-      },
-      { gasLimit: 100_000 }
-    );
-    console.debug(tx);
-  }, [secretAddress, secretjs]);
-
-  const queryCount = useCallback(async () => {
-    if (!secretjs || !secretAddress) {
-      return;
-    }
-
-    const tx = (await secretjs.query.compute.queryContract({
-      contract_address: contractAddress,
-      code_hash: contractCodeHash,
-      query: {
-        get_count: {},
-      },
-    })) as { count: number };
-
-    setCount(tx.count);
-
-    return tx.count;
-  }, [secretAddress, secretjs]);
 
   const queryMaps = useCallback(async () => {
     if (!secretjs || !secretAddress) {
@@ -86,14 +34,44 @@ export const useSecretjs = () => {
     return tx.maps;
   }, [secretAddress, secretjs]);
 
+  const generate = useCallback(
+    async ({ withQuery }: { withQuery?: boolean }) => {
+      if (!secretjs || !secretAddress) {
+        return;
+      }
+
+      const tx = await secretjs.tx.compute.executeContract(
+        {
+          sender: secretAddress,
+          contract_address: contractAddress,
+          msg: {
+            generate: {},
+          },
+          code_hash: contractCodeHash,
+        },
+        { gasLimit: 3000_000 }
+      );
+      if (withQuery) {
+        await queryMaps();
+      }
+    },
+    [queryMaps, secretAddress, secretjs]
+  );
+
   return {
-    connectWallet,
-    disconnectWallet,
-    increment,
-    generate,
-    queryCount,
-    queryMaps,
-    count,
-    maps,
+    wallet: {
+      isConnected: isWalletConnected,
+      connect: connectWallet,
+      disconnect: disconnectWallet,
+    },
+    execute: {
+      generate,
+    },
+    query: {
+      queryMaps,
+    },
+    state: {
+      maps,
+    },
   };
 };
