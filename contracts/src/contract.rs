@@ -3,7 +3,8 @@ use cosmwasm_std::{
 };
 
 use crate::msg::{
-    CountResponse, ExecuteMsg, InstantiateMsg, MapCountResponse, MapResponse, QueryMsg,
+    CountResponse, ExecuteMsg, InstantiateMsg, MapCountResponse, MapResponse, MapsResponse,
+    QueryMsg,
 };
 use crate::state::{config, config_read, State};
 
@@ -100,6 +101,7 @@ pub fn try_clear(deps: DepsMut, _env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
+        QueryMsg::GetMaps {} => to_binary(&query_maps(deps)?),
         QueryMsg::GetMap { index } => to_binary(&query_map(deps, index)?),
         QueryMsg::GetMapCount {} => to_binary(&query_map_count(deps)?),
     }
@@ -110,11 +112,9 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
     Ok(CountResponse { count: state.count })
 }
 
-fn query_map_count(deps: Deps) -> StdResult<MapCountResponse> {
+fn query_maps(deps: Deps) -> StdResult<MapsResponse> {
     let state = config_read(deps.storage).load()?;
-    Ok(MapCountResponse {
-        count: state.maps.len(),
-    })
+    Ok(MapsResponse { maps: state.maps })
 }
 
 fn query_map(deps: Deps, index: u32) -> StdResult<MapResponse> {
@@ -122,6 +122,13 @@ fn query_map(deps: Deps, index: u32) -> StdResult<MapResponse> {
     Ok(MapResponse {
         index,
         map: state.maps[index as usize].clone(),
+    })
+}
+
+fn query_map_count(deps: Deps) -> StdResult<MapCountResponse> {
+    let state = config_read(deps.storage).load()?;
+    Ok(MapCountResponse {
+        count: state.maps.len(),
     })
 }
 
@@ -216,6 +223,13 @@ mod tests {
 
         let exec_msg = ExecuteMsg::Genrate {};
         execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetMaps {}).unwrap();
+        let value: MapsResponse = from_binary(&res).unwrap();
+        assert_eq!(
+            vec!["1010101101100010111011001111111101110101000010101011101111000000"],
+            value.maps
+        );
 
         let res = query(deps.as_ref(), mock_env(), QueryMsg::GetMap { index: 0 }).unwrap();
         let value: MapResponse = from_binary(&res).unwrap();
