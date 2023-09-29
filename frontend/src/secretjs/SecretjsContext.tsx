@@ -9,7 +9,9 @@ export type SecretjsContextType = {
   disconnectWallet?: () => void;
 };
 
-export const SecretjsContext = createContext<SecretjsContextType>({});
+export const SecretjsContext = createContext<SecretjsContextType>({
+  isWalletConnected: false,
+});
 const SECRET_CHAIN_ID = "pulsar-3";
 const SECRET_LCD = "https://api.pulsar3.scrttestnet.com";
 
