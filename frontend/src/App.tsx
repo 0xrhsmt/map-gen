@@ -3,22 +3,46 @@ import { useEffect } from "react";
 import { useSecretjs } from "./secretjs/useSecretjs";
 import { Maps } from "./components/Map";
 
-const NavBar: React.FC = () => {
+type NavBarProps = {
+  isLoading: boolean;
+  isConnected: boolean;
+  clearMap: (args: { withQuery?: boolean }) => void;
+};
+
+const NavBar: React.FC<NavBarProps> = ({
+  isLoading,
+  isConnected,
+  clearMap,
+}) => {
   return (
     <div className="navbar bg-base-100">
       <div className="navbar-start"></div>
       <div className="navbar-center">
         <a className="btn btn-ghost normal-case text-xl">map-randomgen</a>
       </div>
-      <div className="navbar-end"></div>
+      <div className="navbar-end">
+        {isConnected && (
+          <button
+            className="btn btn-secondary"
+            onClick={() => clearMap({ withQuery: true })}
+          >
+            {isLoading ? (
+              <span className="loading loading-bars loading-sm"></span>
+            ) : (
+              "CLEAR MAP"
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
 
 function App() {
   const {
+    isLoading,
     wallet: { isConnected, connect: connectWallet },
-    execute: { generate: generateMap },
+    execute: { generate: generateMap, clear: clearMap },
     query: { queryMaps },
     state: { maps },
   } = useSecretjs();
@@ -30,7 +54,11 @@ function App() {
   return (
     <>
       <div className="h-screen">
-        <NavBar />
+        <NavBar
+          isLoading={isLoading}
+          isConnected={isConnected}
+          clearMap={clearMap}
+        />
 
         <div className="px-8 py-1">
           {maps && maps.length > 0 ? (
@@ -51,7 +79,11 @@ function App() {
               className="btn btn-lg btn-wide btn-primary"
               onClick={() => generateMap({ withQuery: true })}
             >
-              GENERATE MAP
+              {isLoading ? (
+                <span className="loading loading-bars loading-md"></span>
+              ) : (
+                "GENERATE MAP"
+              )}
             </button>
           ) : (
             <button

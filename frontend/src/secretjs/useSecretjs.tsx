@@ -15,6 +15,7 @@ export const useSecretjs = () => {
     isWalletConnected,
   } = useContext(SecretjsContext);
   const [maps, setMaps] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const queryMaps = useCallback(async () => {
     if (!secretjs || !secretAddress) {
@@ -40,25 +41,62 @@ export const useSecretjs = () => {
         return;
       }
 
-      const tx = await secretjs.tx.compute.executeContract(
-        {
-          sender: secretAddress,
-          contract_address: contractAddress,
-          msg: {
-            generate: {},
+      setIsLoading(true);
+
+      try {
+        await secretjs.tx.compute.executeContract(
+          {
+            sender: secretAddress,
+            contract_address: contractAddress,
+            msg: {
+              generate: {},
+            },
+            code_hash: contractCodeHash,
           },
-          code_hash: contractCodeHash,
-        },
-        { gasLimit: 3000_000 }
-      );
-      if (withQuery) {
-        await queryMaps();
+          { gasLimit: 3000_000 }
+        );
+        if (withQuery) {
+          await queryMaps();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [queryMaps, secretAddress, secretjs]
+  );
+
+  const clear = useCallback(
+    async ({ withQuery }: { withQuery?: boolean }) => {
+      if (!secretjs || !secretAddress) {
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        await secretjs.tx.compute.executeContract(
+          {
+            sender: secretAddress,
+            contract_address: contractAddress,
+            msg: {
+              clear: {},
+            },
+            code_hash: contractCodeHash,
+          },
+          { gasLimit: 1000_000 }
+        );
+        if (withQuery) {
+          await queryMaps();
+        }
+      } finally {
+        setIsLoading(false);
       }
     },
     [queryMaps, secretAddress, secretjs]
   );
 
   return {
+    isLoading,
     wallet: {
       isConnected: isWalletConnected,
       connect: connectWallet,
@@ -66,6 +104,7 @@ export const useSecretjs = () => {
     },
     execute: {
       generate,
+      clear,
     },
     query: {
       queryMaps,
