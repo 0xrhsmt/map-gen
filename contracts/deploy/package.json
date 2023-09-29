@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "ts-node --esm src/deploy.ts"
+    "test": "ts-node --esm tests/index.ts",
+    "deploy": "ts-node --esm src/main.ts"
   },
   "keywords": [],
   "author": "",

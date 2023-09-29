@@ -3,7 +3,7 @@ import * as fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
-async function main() {
+export async function deploy() {
   if (!process.env.MNEMONIC) {
     throw new Error("No MNEMONIC in .env");
   }
@@ -53,7 +53,7 @@ async function main() {
       sender: wallet.address,
       code_hash: contractCodeHash,
       init_msg: initMsg,
-      label: "secret raffle" + Math.ceil(Math.random() * 10000),
+      label: "map randomgen" + Math.ceil(Math.random() * 10000),
     },
     {
       gasLimit: 400_000,
@@ -74,6 +74,6 @@ async function main() {
 
   fs.writeFileSync("../latest-deployment.json", JSON.stringify(deployment));
   console.log("latest deployment is...\n", deployment);
-}
 
-await main();
+  return deployment;
+}

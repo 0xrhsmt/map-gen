@@ -10,6 +10,7 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct State {
     pub count: i32,
     pub owner: Addr,
+    pub maps: Vec<String>,
 }
 
 pub fn config(storage: &mut dyn Storage) -> Singleton<State> {
