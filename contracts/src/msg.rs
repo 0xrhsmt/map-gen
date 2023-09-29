@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
-    GetMap { index: usize },
+    GetMap { index: u32 },
     GetMapCount {},
 }
 
@@ -32,7 +32,7 @@ pub struct CountResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct MapResponse {
-    pub index: usize,
+    pub index: u32,
     pub map: String,
 }
 

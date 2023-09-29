@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "ts-node --esm tests/index.ts",
-    "deploy": "bash ./build.sh && ts-node --esm src/deploy.ts"
+    "deploy": "bash ./build.sh && ts-node --esm src/main.ts"
   },
   "keywords": [],
   "author": "",

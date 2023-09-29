@@ -117,11 +117,11 @@ fn query_map_count(deps: Deps) -> StdResult<MapCountResponse> {
     })
 }
 
-fn query_map(deps: Deps, index: usize) -> StdResult<MapResponse> {
+fn query_map(deps: Deps, index: u32) -> StdResult<MapResponse> {
     let state = config_read(deps.storage).load()?;
     Ok(MapResponse {
         index,
-        map: state.maps[index].clone(),
+        map: state.maps[index as usize].clone(),
     })
 }
 
