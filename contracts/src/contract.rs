@@ -2,7 +2,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
-use crate::bsp::{BSPMap, Point};
+use crate::bsp::{BSPMap, Size};
 use crate::msg::{
     CountResponse, ExecuteMsg, InstantiateMsg, MapCountResponse, MapResponse, MapsResponse,
     QueryMsg,
@@ -76,10 +76,10 @@ pub fn try_generate(deps: DepsMut, env: Env) -> StdResult<Response> {
     ]);
 
     let map = BSPMap::new(
-        Point::new(30, 50),
+        Size::new(30, 50),
         MersenneTwister::new(random_number),
-        Point::new(3, 5),
-        Point::new(10, 15),
+        Size::new(6, 6),
+        Size::new(14, 14),
     )
     .unwrap();
 

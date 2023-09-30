@@ -10,7 +10,7 @@ export const Map: React.FC<MapProps> = ({ map }) => {
       {rows.map((_row, index) => {
         const row = _row.split("").map((cell, index) => {
           const color =
-            cell === "0" ? "green" : cell === "1" ? "orange" : "blue";
+            cell === "0" ? "green" : cell === "1" ? "orange" : "rgb(30 58 138)";
 
           return (
             <span key={index} style={{ color: color }}>
