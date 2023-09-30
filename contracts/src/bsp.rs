@@ -36,10 +36,6 @@ impl fmt::Display for Point {
     }
 }
 
-/// Map generated with binary search partitioning. The map must have a size of atleast (20,20).
-///
-/// Credit to https://gamedevelopment.tutsplus.com/tutorials/how-to-use-bsp-trees-to-generate-game-maps--gamedev-12268 and https://github.com/whostolemyhat/dungeon
-/// for algorithm and rust implementation help.
 pub struct BSPMap {
     size: Point,
     tiles: HashMap<Point, Tile>,
@@ -76,27 +72,26 @@ impl BSPMap {
             return Err("Maximum room size (y) must be less than map size (y).".to_string());
         }
         let mut map = BSPMap {
-            size: size,
+            size,
             tiles: HashMap::new(),
             rooms: Vec::new(),
             min_room_size,
             max_room_size,
         };
-        map.place_rooms(&mut seed, map.min_room_size, map.max_room_size);
-        // Hard wall around left
+        map.place_rooms(&mut seed);
+
         for y in 0..size.y {
             map.tiles.insert(Point::new(0, y), Tile::Wall);
             map.tiles.insert(Point::new(map.size.x, y), Tile::Wall);
         }
-        // hard wall on top
+
         for x in 0..size.x {
             map.tiles.insert(Point::new(x, 0), Tile::Wall);
             map.tiles.insert(Point::new(x, map.size.y), Tile::Wall);
         }
         let mut walls: Vec<Point> = Vec::new();
-        // Walls around tiles
+
         for tile in map.tiles.iter() {
-            // check all eight points around
             if map.tiles.get(&Point::new(tile.0.x + 1, tile.0.y)).is_none() {
                 walls.push(Point::new(tile.0.x + 1, tile.0.y))
             }
@@ -142,7 +137,7 @@ impl BSPMap {
                 walls.push(Point::new(tile.0.x + 1, tile.0.y - 1))
             }
         }
-        // Insert walls
+
         for wall in walls.iter() {
             map.tiles.insert(wall.clone(), Tile::Wall);
         }
@@ -160,21 +155,16 @@ impl BSPMap {
     pub fn get_rooms(&self) -> &Vec<Room> {
         &&self.rooms
     }
-    fn place_rooms(
-        &mut self,
-        rng: &mut MersenneTwister,
-        min_room_size: Point,
-        max_room_size: Point,
-    ) {
+    fn place_rooms(&mut self, rng: &mut MersenneTwister) {
         let mut root = Leaf::new(Point { x: 0, y: 0 }, self.size);
-        // generate leaves
-        root.generate(rng, &min_room_size, &max_room_size);
-        // generate rooms in leaves
-        root.create_rooms(rng, &min_room_size);
-        // Loop over leaves spawning rooms
+
+        root.generate(rng, &self.min_room_size, &self.max_room_size);
+
+        root.create_rooms(rng, &self.min_room_size);
+
         for leaf in root.iter() {
             if leaf.is_leaf() {
-                if let Some(room) = leaf.get_room() {
+                if let Some(room) = leaf.get_room(rng) {
                     self.add_room(&room);
                 }
             }
@@ -200,12 +190,6 @@ impl BSPMap {
 
 impl fmt::Display for BSPMap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // for tile in self.tiles.iter() {
-        //     match self.tiles.get(&tile.0) {
-        //         Some(x) => write!(f, "{}", x)?,
-        //         None => write!(f, "x")?,
-        //     }
-        // }
         for row in 0..=self.size.x {
             for col in 0..=self.size.y {
                 match self.tiles.get(&Point::new(row, col)) {
@@ -229,8 +213,6 @@ impl Room {
     pub fn new(position: Point, size: Point) -> Self {
         Room { position, size }
     }
-    /// Calculates if two rooms intersect with one another.
-    /// Rust port of https://stackoverflow.com/questions/20925818/algorithm-to-check-if-two-boxes-overlap
     pub fn intersects(&self, other: &Room) -> bool {
         let x_intersect: bool = ((self.position.x + self.size.x) > other.position.x)
             && (other.position.x + (other.size.x) > self.position.x);
@@ -241,9 +223,7 @@ impl Room {
 }
 
 pub struct Leaf {
-    /// Top left corner (x,y)
     position: Point,
-    /// Size of leaf (x,y)
     size: Point,
     left_child: Option<Box<Leaf>>,
     right_child: Option<Box<Leaf>>,
@@ -271,64 +251,56 @@ impl Leaf {
         if self.left_child.is_some() || self.right_child.is_some() {
             return false;
         }
-        // init
+
         let split_horizontal: bool;
-        // determine split direction
-        if (self.size.x > self.size.y) && (self.size.x as u64 / self.size.y as u64) * 100 >= 125 {
+
+        if (self.size.x > self.size.y) && (self.size.x as u64 * 100 / self.size.y as u64) >= 125 {
             split_horizontal = false;
         } else if (self.size.y > self.size.x)
-            && (self.size.y as u64 / self.size.x as u64) * 100 >= 125
+            && (self.size.y as u64 * 100 / self.size.x as u64) >= 125
         {
             split_horizontal = true;
         } else {
             split_horizontal = rng.generate_range(0, 1) == 1;
         };
 
-        // determine where we are going to split
-        let split = if split_horizontal == true {
-            rng.generate_range(min_room_size.x as u32, max_room_size.y as u32)
+        let split = if split_horizontal {
+            rng.generate_range(min_room_size.x as u32, max_room_size.x as u32)
         } else {
             rng.generate_range(min_room_size.y as u32, max_room_size.y as u32)
         } as usize;
-        // split
+
         if split_horizontal {
+            if split >= self.size.y {
+                return false;
+            }
             self.left_child = Some(Box::new(Leaf::new(
                 Point::new(self.position.x, self.position.y),
                 Point::new(self.size.x, split),
             )));
-            if split >= self.size.y {
-                return false;
-            } else {
-                self.right_child = Some(Box::new(Leaf::new(
-                    Point::new(self.position.x, self.position.y + split),
-                    Point::new(self.size.x, self.size.y - split),
-                )));
-            }
+            self.right_child = Some(Box::new(Leaf::new(
+                Point::new(self.position.x, self.position.y + split),
+                Point::new(self.size.x, self.size.y - split),
+            )));
         } else {
+            if split >= self.size.x {
+                return false;
+            }
             self.left_child = Some(Box::new(Leaf::new(
                 Point::new(self.position.x, self.position.y),
                 Point::new(split, self.size.y),
             )));
-            if split >= self.size.x {
-                return false;
-            } else {
-                self.right_child = Some(Box::new(Leaf::new(
-                    Point::new(self.position.x + split, self.position.y),
-                    Point::new(self.size.x - split, self.size.y),
-                )));
-            }
+
+            self.right_child = Some(Box::new(Leaf::new(
+                Point::new(self.position.x + split, self.position.y),
+                Point::new(self.size.x - split, self.size.y),
+            )));
         }
         true
     }
 
     fn is_leaf(&self) -> bool {
-        match self.left_child {
-            None => match self.right_child {
-                None => true,
-                Some(_) => false,
-            },
-            Some(_) => false,
-        }
+        self.left_child.is_none() && self.right_child.is_none()
     }
 
     fn generate(
@@ -337,31 +309,27 @@ impl Leaf {
         min_room_size: &Point,
         max_room_size: &Point,
     ) {
-        if self.is_leaf() {
-            if self.split(rng, min_room_size, max_room_size) {
-                self.left_child
-                    .as_mut()
-                    .unwrap()
-                    .generate(rng, min_room_size, max_room_size);
-                self.right_child
-                    .as_mut()
-                    .unwrap()
-                    .generate(rng, min_room_size, max_room_size);
-            }
+        if self.is_leaf() && self.split(rng, min_room_size, max_room_size) {
+            self.left_child
+                .as_mut()
+                .unwrap()
+                .generate(rng, min_room_size, max_room_size);
+            self.right_child
+                .as_mut()
+                .unwrap()
+                .generate(rng, min_room_size, max_room_size);
         }
     }
 
     fn create_rooms(&mut self, rng: &mut MersenneTwister, min_room_size: &Point) {
-        // If it is not a end leaf.
         if let Some(ref mut room) = self.left_child {
             room.as_mut().create_rooms(rng, min_room_size);
         };
-        // If it is not a end leaf.
+
         if let Some(ref mut room) = self.right_child {
             room.as_mut().create_rooms(rng, min_room_size);
         };
 
-        // if last level, add a room
         if self.is_leaf() {
             let width: usize;
             if min_room_size.x >= self.size.x {
@@ -401,7 +369,7 @@ impl Leaf {
         };
     }
 
-    fn get_room(&self) -> Option<Room> {
+    fn get_room(&self, rng: &mut MersenneTwister) -> Option<Room> {
         if self.is_leaf() {
             return self.room;
         }
@@ -410,16 +378,22 @@ impl Leaf {
         let mut right_room: Option<Room> = None;
 
         if let Some(ref room) = self.left_child {
-            left_room = room.get_room();
+            left_room = room.get_room(rng);
         }
 
         if let Some(ref room) = self.right_child {
-            right_room = room.get_room();
+            right_room = room.get_room(rng);
         }
         match (left_room, right_room) {
             (None, None) => None,
-            (Some(room), _) => Some(room),
-            (_, Some(room)) => Some(room),
+            (Some(room_left), Some(room_right)) => {
+                if rng.generate_range(0, 1) == 1 {
+                    Some(room_left)
+                } else {
+                    Some(room_right)
+                }
+            }
+            (_, Some(room)) | (Some(room), _) => Some(room),
         }
     }
 
@@ -429,8 +403,7 @@ impl Leaf {
 }
 
 fn create_corridors(rng: &mut MersenneTwister, left: &mut Box<Leaf>, right: &mut Box<Leaf>) {
-    if let (Some(left_room), Some(right_room)) = (left.get_room(), right.get_room()) {
-        // Get random x position and y position
+    if let (Some(left_room), Some(right_room)) = (left.get_room(rng), right.get_room(rng)) {
         let left_point = Point::new(
             rng.generate_range(
                 left_room.position.x as u32,
@@ -441,7 +414,7 @@ fn create_corridors(rng: &mut MersenneTwister, left: &mut Box<Leaf>, right: &mut
                 (left_room.position.y + left_room.size.y) as u32,
             ) as usize,
         );
-        // Get random x position and y position
+
         let right_point = Point::new(
             rng.generate_range(
                 right_room.position.x as u32,
